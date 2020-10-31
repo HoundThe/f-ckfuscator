@@ -7,6 +7,7 @@ TODO list
 
 import lexer
 import random
+import symbol_parser as sym
 import os
 import os.path
 
@@ -14,29 +15,7 @@ header_cache = {}
 extern_symbols = set()
 # Maps every identifier to a unique swear word
 word_map = {}
-
-
-def get_standard_path(hdr_name: str):
-    xxx = '/usr/lib64/clang/10.0.1/include:/usr/include/:/usr/local/include/'
-    x = xxx.split(':')
-    for path in x:
-        if os.path.exists(os.path.join(path, hdr_name)):
-            return os.path.join(path, hdr_name)
-
-
-# Now only works for <> headers and linux
-def follow_includes(header_name: str):
-    symbols = set()
-    path = get_standard_path(header_name)
-    # print(f'{path} - {header_name}')
-    with open(os.path.join(path)) as file:
-        tokens = list(lexer.tokenize(file.read()))
-        headers = get_headers(tokens)
-        for hdr in headers:
-            symbols.update(follow_includes(hdr))
-        symbols.update(get_header_symbols(tokens))
-    # print(f'Symbols of {header_name}\n{symbols}')
-    return symbols
+header_symbol_cache = {}
 
 
 def is_c_file(filename: str) -> bool:
@@ -82,18 +61,20 @@ def create_new_file(tokens: list):
 
 
 c_files = get_c_files()
+print(len(c_files))
 
 for filename in c_files:
     with open(filename) as file:
         tokens = list(lexer.tokenize(file.read(), False))
 
-        headers = get_headers(tokens)
+        headers = sym.get_headers(tokens)
         for hdr in headers:
-            extern_symbols.update(follow_includes(hdr))
+            extern_symbols.update(sym.follow_includes(hdr))
 
+        print(extern_symbols)
         identifiers = get_identifiers(tokens)
 
         map_identifiers_to_swear_words(identifiers)
 
         result = create_new_file(tokens)
-        print(result, end='')
+        # print(result, end='')

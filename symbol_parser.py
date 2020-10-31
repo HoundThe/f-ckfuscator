@@ -1,5 +1,34 @@
 import re
 import lexer
+import os
+
+header_to_symbol_cache = {}
+
+
+def get_standard_path(hdr_name: str):
+    xxx = '/usr/lib64/clang/10.0.1/include:/usr/include/:/usr/local/include/'
+    x = xxx.split(':')
+    for path in x:
+        if os.path.exists(os.path.join(path, hdr_name)):
+            return os.path.join(path, hdr_name)
+
+
+# Now only works for <> headers and linux
+def follow_includes(header_name: str) -> set:
+    path = get_standard_path(header_name)
+    if path is None:
+        return set()
+
+    if path not in header_to_symbol_cache:
+        print(header_name, path)
+        header_to_symbol_cache[path] = set()
+        with open(os.path.join(path)) as file:
+            tokens = list(lexer.tokenize(file.read()))
+            headers = get_headers(tokens)
+            for hdr in headers:
+                header_to_symbol_cache[path].update(follow_includes(hdr))
+    print(header_to_symbol_cache[path])
+    return header_to_symbol_cache[path]
 
 
 def get_headers(tokens: list):
