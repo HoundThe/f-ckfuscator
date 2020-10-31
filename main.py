@@ -7,7 +7,6 @@ TODO list
 
 import lexer
 import random
-import re
 import os
 import os.path
 
@@ -15,55 +14,6 @@ header_cache = {}
 extern_symbols = set()
 # Maps every identifier to a unique swear word
 word_map = {}
-
-
-def is_identifier(string: str):
-    return string not in lexer.keywords and \
-        re.match(lexer.token_regexes['Identifier'], string)
-
-
-def get_headers(tokens: list):
-    headers = []
-    for tok in tokens:
-        # match = re.match(r"(?:\s)*#(?:\s)*include", tok)
-        if tok.startswith('#include'):
-            # headers are either inside <> or ""
-            x = re.search(r'(?:<[^>]*>)|(?:"[^"]*")', tok)
-            if x:
-                start, end = x.span()
-                hdr_name = tok[start+1:end-1]
-                headers.append(hdr_name)
-    return headers
-
-
-def get_header_symbols(tokens: list):
-    # We want #define <identifier> symbols (macros and constants)
-    symbols = set()
-    for idx, tok in enumerate(tokens):
-        match = re.match(r"(?:\s)*#(?:\s)*define", tok)
-        if match:  # preprocessor token
-            start, end = match.span()
-            # tokenize the single line
-            tmp = lexer.tokenize(tok[end:])
-            for kkk in tmp:
-                if is_identifier(kkk):
-                    symbols.add(kkk)
-        if tok == '(':  # function definition
-            i = 1
-            while idx - i != 0:
-                if is_identifier(tokens[idx-i]):
-                    symbols.add(tokens[idx-i])
-                    break
-                i += 1
-        if tok == 'typedef':
-            i = 1
-            while idx + i != len(tokens):
-                if is_identifier(tokens[idx+i]) and \
-                        is_identifier(tokens[idx+i+1]):
-                    symbols.add(tokens[idx+i+1])
-                    break
-                i += 1
-    return symbols
 
 
 def get_standard_path(hdr_name: str):
@@ -112,7 +62,7 @@ def get_c_files() -> list:
 def get_identifiers(tokens: list) -> list:
     identifiers = []
     for tok in tokens:
-        if is_identifier(tok) and tok not in extern_symbols:
+        if lexer.is_identifier(tok) and tok not in extern_symbols:
             identifiers.append(tok)
     return identifiers
 
@@ -126,7 +76,7 @@ def map_identifiers_to_swear_words(identifiers: list):
 
 def create_new_file(tokens: list):
     for idx, tok in enumerate(tokens):
-        if is_identifier(tok) and tok not in extern_symbols:
+        if lexer.is_identifier(tok) and tok not in extern_symbols:
             tokens[idx] = word_map[tok]
     return ''.join(tokens)
 

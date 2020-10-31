@@ -63,10 +63,19 @@ token_regexes = {
     'Punctuator': group(*[re.escape(pun) for pun in punctuators]),
 }
 
+# Join all regexes into single one
 Tokens = group(*list(token_regexes.values()))
 
 
-def tokenize(code: str, ignore_whitespace=True):
+def tokenize(code: str, ignore_whitespace=True) -> str:
+    """
+    Basic tokenizes for purposes of the f-ckfusactor
+    It splits the code into substrings of unidentified
+    tokens, to deal with preprocessor, every line starting
+    with # is a separate token
+
+    TODO: understand digraphs and trigraphs aswell
+    """
     pos = 0
     max = len(code)
     while pos != max:
@@ -81,8 +90,8 @@ def tokenize(code: str, ignore_whitespace=True):
             yield code[start:end]
         else:
             print(code)
-            raise Exception(f'Unexpected token:')
+            raise Exception('Unexpected token:')
 
 
-def is_identifier(string: str):
+def is_identifier(string: str) -> bool:
     return string not in keywords and re.match(token_regexes['Identifier'], string)
